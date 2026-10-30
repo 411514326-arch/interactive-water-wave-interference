@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Water Wave Interference Simulation Laboratory</title>
+    
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- KaTeX for Scientific Math Formula Rendering -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/contrib/auto-render.min.js"></script>
+    
+    <!-- Three.js for 3D Water Simulation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- Header Navigation Bar -->
+    <header class="app-header">
+        <div class="brand-section">
+            <i class="fa-solid fa-water brand-icon"></i>
+            <div class="brand-title">
+                WaveLab <span class="subtitle">Physics Simulation</span>
+            </div>
+        </div>
+
+        <nav class="nav-tabs">
+            <button class="nav-tab-btn active" data-tab="simulation">
+                <i class="fa-solid fa-wave-square"></i> Simulation & Analysis
+            </button>
+            <button class="nav-tab-btn" data-tab="laboratory">
+                <i class="fa-solid fa-flask"></i> Virtual Laboratory
+            </button>
+            <button class="nav-tab-btn" data-tab="education">
+                <i class="fa-solid fa-graduation-cap"></i> Educational Guide
+            </button>
+        </nav>
+
+        <div class="header-status-area">
+            <button id="btnAudioToggle" class="btn btn-sm">
+                <i class="fa-solid fa-volume-mute"></i> Sound Muted
+            </button>
+            <div class="status-item">Time: <strong id="simTimeDisplay">0.00 s</strong></div>
+            <div class="status-item"><strong id="fpsDisplay">60 FPS</strong></div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="app-main">
+
+        <!-- TAB 1: Simulation & Analysis -->
+        <div id="tab-simulation" class="tab-page active">
+            <div class="workspace-layout">
+
+                <!-- Left Sidebar: Controls & Parameters -->
+                <aside class="sidebar-controls">
+
+                    <!-- Transport Controls -->
+                    <div class="panel-section">
+                        <div class="section-title"><i class="fa-solid fa-play-circle"></i> Simulation Control</div>
+                        <div class="transport-bar">
+                            <button id="btnPlayPause" class="btn btn-primary" style="flex:1;">
+                                <i class="fa-solid fa-pause"></i> Pause
+                            </button>
+                            <button id="btnReset" class="btn" title="Reset Simulation Clock">
+                                <i class="fa-solid fa-rotate-left"></i>
+                            </button>
+                            <button id="btnStepForward" class="btn" title="Step Forward 0.05s">
+                                <i class="fa-solid fa-forward-step"></i>
+                            </button>
+                        </div>
+                        <div class="control-group">
+                            <div class="control-label-row">
+                                <span>Time Scale Speed:</span>
+                                <div style="display:flex; gap:0.25rem;">
+                                    <button id="btnSpeedDown" class="btn btn-sm btn-icon" title="Slower"><i class="fa-solid fa-backward"></i></button>
+                                    <button id="btnSpeedUp" class="btn btn-sm btn-icon" title="Faster"><i class="fa-solid fa-forward"></i></button>
+                                </div>
+                            </div>
+                            <div class="slider-input-pair">
+                                <input type="range" id="sliderSimSpeed" min="0.1" max="3.0" step="0.1" value="1.0">
+                                <input type="number" id="inputSimSpeed" min="0.1" max="3.0" step="0.1" value="1.0">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Interference Mode Selection -->
+                    <div class="panel-section">
+                        <div class="section-title"><i class="fa-solid fa-sliders"></i> Configuration Mode</div>
+                        <select id="selectInterferenceMode" class="lab-select" style="width:100%; margin-bottom:0.5rem;">
+                            <option value="double" selected>Double-Source Interference (S₁ & S₂)</option>
+                            <option value="single">Single Point Source (Baseline)</option>
+                            <option value="multi">Multi-Source Array (N Sources)</option>
+                        </select>
+                    </div>
+
+                    <!-- Physical Parameters (Coupled Relations v = f * lambda) -->
+                    <div class="panel-section">
+                        <div class="section-title"><i class="fa-solid fa-atom"></i> Physical Parameters</div>
+
+                        <!-- Wave Speed v -->
+                        <div class="control-group">
+                            <div class="control-label-row">
+                                <span>Wave Speed (<span class="symbol">v</span>)</span>
+                                <span class="mono text-cyan">m/s</span>
+                            </div>
+                            <div class="slider-input-pair">
+                                <input type="range" id="sliderWaveSpeed" min="0.5" max="5.0" step="0.1" value="2.0">
+                                <input type="number" id="inputWaveSpeed" min="0.5" max="5.0" step="0.1" value="2.0">
+                            </div>
+                        </div>
+
+                        <!-- Frequency f -->
+                        <div class="control-group">
+                            <div class="control-label-row">
+                                <span>Frequency (<span class="symbol">f</span>)</span>
+                                <span class="mono text-cyan">Hz</span>
+                            </div>
+                            <div class="slider-input-pair">
+                                <input type="range" id="sliderFrequency" min="0.2" max="3.0" step="0.05" value="1.0">
+                                <input type="number" id="inputFrequency" min="0.2" max="3.0" step="0.05" value="1.0">
+                            </div>
+                        </div>
+
+                        <!-- Wavelength lambda -->
+                        <div class="control-group">
+                            <div class="control-label-row">
+                                <span>Wavelength (<span class="symbol">λ = v/f</span>)</span>
+                                <span class="mono text-cyan">m</span>
+                            </div>
+                            <div class="slider-input-pair">
+                                <input type="range" id="sliderWavelength" min="0.5" max="6.0" step="0.1" value="2.0">
+                                <input type="number" id="inputWavelength" min="0.5" max="6.0" step="0.1" value="2.0">
+                            </div>
+                        </div>
+
+                        <!-- Amplitude A -->
+                        <div class="control-group">
+                            <div class="control-label-row">
+                                <span>Amplitude (<span class="symbol">A</span>)</span>
+                                <span class="mono text-cyan">m</span>
+                            </div>
+                            <div class="slider-input-pair">
+                                <input type="range" id="sliderAmplitude" min="0.2" max="2.0" step="0.1" value="1.0">
+                                <input type="number" id="inputAmplitude" min="0.2" max="2.0" step="0.1" value="1.0">
+                            </div>
+                        </div>
+
+                        <!-- Source Separation d -->
+                        <div class="control-group">
+                            <div class="control-label-row">
+                                <span>Source Separation (<span class="symbol">d</span>)</span>
+                                <span class="mono text-cyan">m</span>
+                            </div>
+                            <div class="slider-input-pair">
+                                <input type="range" id="sliderSeparation" min="0.5" max="8.0" step="0.1" value="3.0">
+                                <input type="number" id="inputSeparation" min="0.5" max="8.0" step="0.1" value="3.0">
+                            </div>
+                        </div>
+
+                        <!-- Phase Difference Delta Phi0 -->
+                        <div class="control-group">
+                            <div class="control-label-row">
+                                <span>Phase Difference (<span class="symbol">Δφ₀</span>)</span>
+                                <span class="mono text-amber">deg</span>
+                            </div>
+                            <div class="slider-input-pair">
+                                <input type="range" id="sliderPhaseDiff" min="-180" max="180" step="5" value="0">
+                                <input type="number" id="inputPhaseDiff" min="-180" max="180" step="5" value="0">
+                            </div>
+                        </div>
+
+                        <!-- Derived Physical Constants Summary -->
+                        <div style="background:#090f20; padding:0.6rem; border-radius:6px; margin-top:0.6rem; font-size:0.75rem;">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:0.25rem;">
+                                <span class="text-muted">Angular Freq (ω = 2πf):</span>
+                                <strong id="valOmega" class="mono text-cyan">6.283 rad/s</strong>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; margin-bottom:0.25rem;">
+                                <span class="text-muted">Wave Number (k = 2π/λ):</span>
+                                <strong id="valK" class="mono text-cyan">3.142 rad/m</strong>
+                            </div>
+                            <div style="display:flex; justify-content:space-between;">
+                                <span class="text-muted">Period (T = 1/f):</span>
+                                <strong id="valPeriod" class="mono text-cyan">1.000 s</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Visual Layers & Analytical Overlays -->
+                    <div class="panel-section">
+                        <div class="section-title"><i class="fa-solid fa-layer-group"></i> Visual Layers</div>
+                        <div class="checkbox-grid">
+                            <label class="custom-checkbox">
+                                <input type="checkbox" id="chkWavefronts" checked> Wavefronts
+                            </label>
+                            <label class="custom-checkbox">
+                                <input type="checkbox" id="chkCrests" checked> Wave Crests
+                            </label>
+                            <label class="custom-checkbox">
+                                <input type="checkbox" id="chkTroughs" checked> Wave Troughs
+                            </label>
+                            <label class="custom-checkbox">
+                                <input type="checkbox" id="chkNodalLines" checked> Nodal Lines
+                            </label>
+                            <label class="custom-checkbox">
+                                <input type="checkbox" id="chkAntinodalLines" checked> Antinodal Lines
+                            </label>
+                            <label class="custom-checkbox">
+                                <input type="checkbox" id="chkGrid" checked> 1m Scale Grid
+                            </label>
+                            <label class="custom-checkbox">
+                                <input type="checkbox" id="chkRays" checked> Path Rays
+                            </label>
+                            <label class="custom-checkbox">
+                                <input type="checkbox" id="chkAttenuation"> 1/√r Damping
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Wave Sources Management -->
+                    <div class="panel-section" style="border-bottom:none;">
+                        <div class="section-title" style="justify-content:space-between;">
+                            <span><i class="fa-solid fa-bullseye"></i> Wave Sources</span>
+                            <button id="btnAddSource" class="btn btn-sm" title="Add New Wave Source">
+                                <i class="fa-solid fa-plus"></i> Add
+                            </button>
+                        </div>
+                        <div id="sourcesList">
+                            <!-- Populated dynamically by app.js -->
+                        </div>
+                    </div>
+
+                </aside>
+
+                <!-- Center Viewport: Simulation Canvas & Oscilloscope -->
+                <section class="center-viewport">
+                    
+                    <!-- Top Floating Toolbar -->
+                    <div class="stage-floating-toolbar">
+                        <div class="btn-group" style="display:flex; gap:0.25rem;">
+                            <button id="btnView2D" class="btn btn-sm active"><i class="fa-solid fa-circle-dot"></i> 2D Ripple Tank</button>
+                            <button id="btnView3D" class="btn btn-sm"><i class="fa-solid fa-cube"></i> 3D Surface</button>
+                        </div>
+                        <label class="custom-checkbox" style="margin-left:0.5rem; display:none;" id="labelWireframe3D">
+                            <input type="checkbox" id="chkWireframe3D"> Wireframe
+                        </label>
+                        <button id="btnResetCamera3D" class="btn btn-sm" style="display:none;" title="Reset 3D Orbit View">
+                            <i class="fa-solid fa-arrows-rotate"></i> Reset View
+                        </button>
+                    </div>
+
+                    <!-- Scientific Color Legend Overlay -->
+                    <div class="stage-floating-legend">
+                        <div style="font-weight:600; color:#fff; margin-bottom:0.2rem;">Surface Displacement</div>
+                        <div class="legend-bar"></div>
+                        <div class="legend-labels">
+                            <span>-2A</span>
+                            <span>-A</span>
+                            <span>0</span>
+                            <span>+A</span>
+                            <span>+2A</span>
+                        </div>
+                        <div class="legend-indicators">
+                            <div class="legend-item">
+                                <span class="line-swatch antinodal"></span> Antinodal (Δr = mλ)
+                            </div>
+                            <div class="legend-item">
+                                <span class="line-swatch nodal"></span> Nodal (Δr = (m+½)λ)
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Simulation Stage (2D and 3D) -->
+                    <div class="simulation-stage">
+                        <div id="canvas2dWrapper">
+                            <canvas id="waveCanvas2D"></canvas>
+                        </div>
+                        <div id="container3dWrapper" style="display:none;">
+                            <div id="container3D" style="width:100%; height:100%;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Waveform Oscilloscope Drawer -->
+                    <div class="bottom-oscilloscope">
+                        <div class="osc-header">
+                            <div class="osc-title">
+                                <i class="fa-solid fa-chart-line text-cyan"></i> Real-Time Probe Oscilloscope: \(y(t)\) vs Time
+                            </div>
+                            <div class="osc-legends">
+                                <div class="legend-badge">
+                                    <span class="dot" style="background:#00f0ff;"></span> Wave 1 (\(y_1\))
+                                </div>
+                                <div class="legend-badge">
+                                    <span class="dot" style="background:#ff9900;"></span> Wave 2 (\(y_2\))
+                                </div>
+                                <div class="legend-badge">
+                                    <span class="dot" style="background:#ffffff; box-shadow:0 0 6px #00f0ff;"></span> Resultant (\(y\))
+                                </div>
+                                <select id="selectTimeWindow" class="lab-select" style="padding:0.2rem 0.4rem; font-size:0.72rem;">
+                                    <option value="2.0">Window: 2s</option>
+                                    <option value="4.0" selected>Window: 4s</option>
+                                    <option value="8.0">Window: 8s</option>
+                                </select>
+                                <button id="btnFreezeOsc" class="btn btn-sm">
+                                    <i class="fa-solid fa-pause"></i> Freeze
+                                </button>
+                            </div>
+                        </div>
+                        <div id="oscWrapper" class="osc-canvas-wrapper">
+                            <canvas id="oscilloscopeCanvas"></canvas>
+                        </div>
+                    </div>
+
+                </section>
+
+                <!-- Right Sidebar: Interactive Measurement Probe & Math Solver -->
+                <aside class="sidebar-measurements">
+                    <div class="panel-section" style="border-bottom:none;">
+                        <div id="probePanel">
+                            <!-- Populated dynamically by probe.js -->
+                        </div>
+                    </div>
+                </aside>
+
+            </div>
+        </div>
+
+        <!-- TAB 2: Virtual Physics Laboratory -->
+        <div id="tab-laboratory" class="tab-page">
+            <div class="lab-workspace">
+                
+                <div class="lab-toolbar">
+                    <div class="lab-preset-picker">
+                        <label style="font-size:0.85rem; font-weight:600; color:var(--primary-sky);">
+                            <i class="fa-solid fa-book-bookmark"></i> Laboratory Protocol:
+                        </label>
+                        <select id="selectExperimentPreset" class="lab-select" style="min-width:320px;">
+                            <option value="">-- Choose an Experiment Protocol --</option>
+                            <option value="exp1">Experiment 1: Constructive vs Destructive Path Difference</option>
+                            <option value="exp2">Experiment 2: Source Separation & Hyperbolic Nodal Lines</option>
+                            <option value="exp3">Experiment 3: Anti-Phase Sources (Δφ₀ = 180° = π)</option>
+                            <option value="exp4">Experiment 4: Dispersion Relation Verification (v = f·λ)</option>
+                            <option value="exp5">Experiment 5: Multi-Source Linear Array (Phased Array)</option>
+                        </select>
+                    </div>
+
+                    <div style="display:flex; gap:0.5rem;">
+                        <button id="btnRecordPoint" class="btn btn-primary">
+                            <i class="fa-solid fa-camera"></i> Record Current Point
+                        </button>
+                        <button id="btnExportCSV" class="btn" title="Download spreadsheet of recorded trials">
+                            <i class="fa-solid fa-file-csv text-cyan"></i> Export CSV
+                        </button>
+                        <button id="btnClearTable" class="btn btn-icon text-danger" title="Clear all recorded data">
+                            <i class="fa-solid fa-trash-alt"></i> Clear
+                        </button>
+                    </div>
+                </div>
+
+                <div class="lab-table-container">
+                    <table class="scientific-data-table">
+                        <thead>
+                            <tr>
+                                <th>Trial #</th>
+                                <th>Probe Pos (x, y)</th>
+                                <th>Dist \(r_1\)</th>
+                                <th>Dist \(r_2\)</th>
+                                <th>Path Diff \(\Delta r\)</th>
+                                <th>\(\Delta r / \lambda\)</th>
+                                <th>Phase Diff \(\Delta \Phi\)</th>
+                                <th>Resultant Amp \(A_{\text{res}}\)</th>
+                                <th>Observed Type</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="labTableBody">
+                            <!-- Populated dynamically by laboratory.js -->
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- TAB 3: Educational Guide -->
+        <div id="tab-education" class="tab-page">
+            <div id="educationContainer" style="width:100%; height:100%;">
+                <!-- Populated dynamically by education.js -->
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Custom Physics & Simulation Scripts -->
+    <script src="js/physics.js"></script>
+    <script src="js/renderer2d.js"></script>
+    <script src="js/renderer3d.js"></script>
+    <script src="js/probe.js"></script>
+    <script src="js/oscilloscope.js"></script>
+    <script src="js/laboratory.js"></script>
+    <script src="js/education.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
