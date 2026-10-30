@@ -157,6 +157,16 @@ class SimulationApp {
             this.renderer3d.resetCamera();
         });
 
+        // URL Parameters for Direct View & Tab Selection
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('mode') === '3d') {
+            this.switchViewMode('3d');
+        }
+        const initialTab = urlParams.get('tab');
+        if (initialTab) {
+            this.switchMainTab(initialTab);
+        }
+
         // Resize handler
         window.addEventListener('resize', () => this.handleResize());
         this.handleResize();
